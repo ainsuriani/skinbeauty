@@ -1,0 +1,22 @@
+<?php
+include 'auth.php';
+include 'db.php';
+
+$slots=[["08:00","10:00"],["10:00","12:00"],["14:00","16:00"],["16:00","18:00"]];
+$maxDaily = 5;
+$date = $_GET['date']??'';
+if(!$date){ echo json_encode([]); exit; }
+
+$booked=[];
+$stmt=$conn->prepare("SELECT time FROM appointments WHERE date=?");
+$stmt->bind_param("s",$date);
+$stmt->execute();
+$res=$stmt->get_result();
+while($row=$res->fetch_assoc()) $booked[]=$row['time'];
+
+$result=[];
+foreach($slots as $s){
+    $count=0; foreach($booked as $b) if($b==$s[0]) $count++;
+    $result[]= ['start'=>$s[0],'end'=>$s[1],'available'=>($count<$maxDaily),'bookedCount'=>$count];
+}
+echo json_encode($result);
